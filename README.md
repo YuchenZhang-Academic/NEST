@@ -31,11 +31,13 @@ The node-centric design keeps model inputs local while allowing interactions to 
 ## Repository Structure
 
 ```text
-code/
-├── ip_generator/    # IP address set modeling
-├── single_trace/    # Single-node trace training and generation support
-├── multi_trace/     # Multi-node trace model and orchestration
-└── tdsc/            # Separate follow-up workload and engine experiments
+NEST/
+├── ip_generator/             # IP address set modeling
+├── single_trace/             # Single-node trace training and generation support
+├── multi_trace/              # Multi-node trace model and orchestration
+├── tdsc/                     # Separate follow-up workload and engine experiments
+├── run_smoke_experiments.py
+└── tdsc_route_probe.py
 ```
 
 The `tdsc/` code supports ongoing work on offline workload construction and security-engine testing. It is separate from the results reported in the INFOCOM 2026 paper.

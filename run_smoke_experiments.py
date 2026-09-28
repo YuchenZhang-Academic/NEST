@@ -10,7 +10,7 @@ from pathlib import Path
 import torch
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parent
 CODE_DIR = Path(__file__).resolve().parent
 
 
