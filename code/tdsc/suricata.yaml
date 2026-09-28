@@ -1,0 +1,50 @@
+%YAML 1.1
+---
+runmode: single
+stats:
+  enabled: yes
+  interval: 1
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types:
+        - flow
+        - stats:
+            totals: yes
+            threads: no
+        - anomaly
+logging:
+  default-log-level: notice
+  outputs:
+    - console:
+        enabled: yes
+unix-command:
+  enabled: no
+flow:
+  memcap: 1mb
+  hash-size: 64
+  prealloc: 8
+  managers: 1
+  recyclers: 1
+  emergency-recovery: 30
+stream:
+  memcap: 32mb
+  prealloc-sessions: 32
+  midstream: true
+  checksum-validation: true
+  reassembly:
+    memcap: 64mb
+    depth: 1mb
+defrag:
+  memcap: 8mb
+  hash-size: 64
+  trackers: 32
+  max-frags: 32
+host:
+  hash-size: 64
+  prealloc: 0
+  memcap: 1mb
+threading:
+  set-cpu-affinity: no

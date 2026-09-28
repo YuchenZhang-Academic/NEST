@@ -1,0 +1,8 @@
+*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/code/
+!/code/**/
+!/code/**/*.py
+!/code/**/*.yaml
