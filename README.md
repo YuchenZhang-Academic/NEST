@@ -1,77 +1,63 @@
-# NEST
+# NEST: A Node-Interactive Generative Emulation Framework for Synthetic Traffic Generation
 
-**Node-Interactive Emulation for Synthetic Traffic Generation and Security Testing**
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue" alt="GPLv3 license"></a>
+  <a href="https://ieeexplore.ieee.org/abstract/document/11571483"><img src="https://img.shields.io/badge/IEEE%20INFOCOM-2026-blue" alt="IEEE INFOCOM 2026"></a>
+  <a href="https://ieeexplore.ieee.org/abstract/document/11571483"><img src="https://img.shields.io/badge/Paper-IEEE%20Xplore-black" alt="Paper on IEEE Xplore"></a>
+</p>
 
-This repository contains the source code for NEST and its unpublished journal-extension draft. NEST generates traffic from node-local packet histories and coordinates the nodes with an event-driven scheduler. The extension constructs offline test workloads from generated PCAP episodes: it keeps a node's identity consistent across flows, builds matched controls, and plans the number of episode copies for a requested peak in an idle-timeout flow model.
+## Overview
 
-## Contents
+This repository contains the source code for **NEST**, presented in:
 
-| Path | Purpose |
-| --- | --- |
-| `code/ip_generator/` | IP-address-set dataset, model, training, and generation code. |
-| `code/single_trace/` | Single-node trace tokenization, model, and training code. |
-| `code/multi_trace/` | Multi-node model, packet generation, event scheduling, and address mapping. |
-| `code/tdsc/` | Bounded generation, workload construction, phase planning, input checks, and offline Suricata experiments. |
-| `code/tdsc/coverage/` | Scripts for the draft's extended input selection and result analysis. |
-| `code/run_smoke_experiments.py` | Small checkpoint-dependent generation entry point for the three model components. |
-| `code/tdsc_route_probe.py` | Flow-state proxy and controlled timing transformations used by the extension scripts. |
+> **Jianfeng Li**, **Yuchen Zhang**, **Jian Qu**, **Jialong Zhang**, and **Xiaobo Ma**<br>
+> **NEST: A Node-Interactive Generative Emulation Framework for Synthetic Traffic Generation**<br>
+> *IEEE INFOCOM 2026* · [Paper](https://ieeexplore.ieee.org/abstract/document/11571483)
 
-The workload builder and host-policy runner use the later corrected source versions: packet address rewriting preserves captured bytes outside IP addresses and checksums, and missing Suricata `host.memcap` statistics remain unavailable rather than being reported as zero.
+Many traffic generators model isolated flows, making it difficult to reproduce the interactions among clients, servers, and other nodes in an application. **NEST** addresses this by learning each node's behavior from its local packet history and coordinating the nodes to generate a coherent, multi-node traffic trace.
 
-## Requirements and inputs
+The paper evaluates traffic statistics, compatibility with analysis and emulation tools, and the structure of generated node-interaction graphs. It reports **97.7% average similarity** for the evaluated graph metrics.
 
-The development environment used Python 3.10, PyTorch 2.4.1, and Scapy 2.6.1. Source imports also require `linear-attention-transformer`, NumPy, pandas, matplotlib, tqdm, and dpkt. Larger neural-generation runs need a suitable CUDA GPU. The engine scripts expect a compatible Suricata 6.0.4 tree containing `usr/bin/suricata`, `usr/lib/x86_64-linux-gnu/`, and, for rule runs, `etc/suricata/`.
+## Framework
 
-**This is a source-only repository.** It does not contain training or evaluation PCAPs, generated traffic, processed datasets, model checkpoints, Suricata binaries, experimental results, or the manuscript. Supply your own inputs and checkpoints. The historical training and generation scripts in `ip_generator/`, `single_trace/`, and `multi_trace/` retain local path assumptions; set their dataset and checkpoint paths for your environment. The commands below use entry points that accept external paths.
+NEST has three stages:
 
-## Example workflow
+1. **IP address set generation** learns which node addresses tend to occur together and instantiates a network scenario.
+2. **Per-node trace generation** models a node's packet sequence using the history of packets it sent or received.
+3. **Multi-node orchestration** schedules the next packet across nodes, updates the affected local histories, and merges the packets into a time-ordered trace.
 
-Run commands from the repository root. Use fresh output directories; the scripts create them.
+The node-centric design keeps model inputs local while allowing interactions to emerge through the shared scheduler.
 
-```bash
-python code/tdsc/check_scheduler.py
+## Repository Structure
 
-python code/tdsc/run_generate.py \
-  --source /path/to/source.pcap \
-  --checkpoint /path/to/multi_trace.pt \
-  --output /path/to/outputs/nest \
-  --device cuda:0 --packets 10 --seconds 600
-
-python code/tdsc/compose_workload.py \
-  --episodes /path/to/outputs/nest/generated.pcap \
-  --output /path/to/outputs/workloads \
-  --targets 64 256
+```text
+code/
+├── ip_generator/    # IP address set modeling
+├── single_trace/    # Single-node trace training and generation support
+├── multi_trace/     # Multi-node trace model and orchestration
+└── tdsc/            # Separate follow-up workload and engine experiments
 ```
 
-`run_generate.py` requires at least two conditioning nodes in the source capture. It records completed packets and metadata; interrupted runs can leave a partial PCAP. `compose_workload.py` admits complete observed biflows under its packet checks and writes episode, replay, and independent-flow controls with a `selection.json` manifest. A direct episode can also come from another NEST generation run. For the historical selection workflow, pass `--selection` and `--episode-dir` instead of `--episodes`; generated PCAP names must match the selected source filename stems.
+The `tdsc/` code supports ongoing work on offline workload construction and security-engine testing. It is separate from the results reported in the INFOCOM 2026 paper.
 
-To plan fixed launch intervals, first construct one-copy units, then run the planner:
+## Code and Data
 
-```bash
-python code/tdsc/compose_workload.py \
-  --episodes /path/to/outputs/nest/generated.pcap \
-  --output /path/to/outputs/units --replicas 1
-python code/tdsc/phase_plan.py \
-  --units /path/to/outputs/units/selection.json \
-  --output /path/to/outputs/phases --targets 64 256
+This is a **source-only** repository. It does not include datasets, PCAP captures, generated traffic, model checkpoints, or experiment results. Running the models and reproducing the paper's experiments require separately supplied inputs and an appropriate Python environment.
+
+## Citation
+
+If you use NEST in academic work, please cite:
+
+```bibtex
+@inproceedings{li2026nest,
+  title     = {NEST: A Node-Interactive Generative Emulation Framework for Synthetic Traffic Generation},
+  author    = {Li, Jianfeng and Zhang, Yuchen and Qu, Jian and Zhang, Jialong and Ma, Xiaobo},
+  booktitle = {IEEE INFOCOM 2026},
+  year      = {2026},
+  url       = {https://ieeexplore.ieee.org/abstract/document/11571483}
+}
 ```
-
-With your own Suricata tree, the generated manifest can be passed to the offline engine runners:
-
-```bash
-python code/tdsc/run_engine.py \
-  --selection /path/to/outputs/workloads/selection.json \
-  --engine-root /path/to/suricata-root \
-  --output /path/to/outputs/engine --checksums no --idle 60
-
-python code/tdsc/run_host_policy.py \
-  --selections /path/to/outputs/workloads/selection.json \
-  --engine-root /path/to/suricata-root \
-  --output /path/to/outputs/host-policy
-```
-
-These are offline PCAP runs. The peak-flow guarantee is for the specified idle-timeout proxy and fixed episode/launch policy; it does not predict Suricata memory occupancy. The host-policy code tests specific UDP threshold rules. Its alert counts are not attack-detection accuracy. Exact manuscript figures and tables require the original inputs, checkpoints, engine environment, and results, none of which are distributed here.
 
 ## License
 
-GNU General Public License v3.0; see [LICENSE](LICENSE).
+This code is available under the [GNU General Public License v3.0](LICENSE).
